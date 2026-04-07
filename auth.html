@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PERFORMANCE — Acesso</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg"/>
+<link rel="apple-touch-icon" href="/icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#1A1C1E; --surface:#22262A; --surface2:#2A2F34;
+    --border:rgba(255,255,255,0.07); --cyan:#00D1FF;
+    --cyan-dim:rgba(0,209,255,0.12); --cyan-glow:rgba(0,209,255,0.25);
+    --text:#F0F4F8; --muted:#7A8A98; --error:#FF5A5A;
+    --success:#00E899; --radius:10px; --radius-sm:6px;
+  }
+  body {
+    font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+    min-height:100dvh;display:flex;align-items:center;justify-content:center;
+    padding:24px;position:relative;overflow:hidden;
+  }
+  body::before {
+    content:'';position:fixed;top:-30%;left:-20%;width:70%;height:70%;
+    background:radial-gradient(ellipse,rgba(0,209,255,0.06) 0%,transparent 65%);pointer-events:none;
+  }
+  body::after {
+    content:'';position:fixed;bottom:-20%;right:-10%;width:50%;height:50%;
+    background:radial-gradient(ellipse,rgba(0,209,255,0.04) 0%,transparent 65%);pointer-events:none;
+  }
+  .card {
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:40px;width:100%;max-width:420px;position:relative;
+    box-shadow:0 32px 64px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.03);
+    animation:cardIn .4s ease;
+  }
+  @keyframes cardIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .logo { display:flex;align-items:center;gap:12px;margin-bottom:32px; }
+  .logo-icon {
+    width:42px;height:42px;background:var(--cyan-dim);border:1px solid rgba(0,209,255,0.3);
+    border-radius:var(--radius);display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:800;color:var(--cyan);letter-spacing:-1px;
+  }
+  .logo-text { font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text); }
+  .logo-sub  { font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:1px; }
+  .tabs {
+    display:flex;background:var(--bg);border-radius:var(--radius-sm);
+    padding:3px;margin-bottom:28px;border:1px solid var(--border);
+  }
+  .tab-btn {
+    flex:1;padding:9px;border:none;background:transparent;color:var(--muted);
+    font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;
+    text-transform:uppercase;border-radius:5px;cursor:pointer;transition:all .2s;
+  }
+  .tab-btn.active { background:var(--surface2);color:var(--cyan);box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+  .form-panel { display:none; }
+  .form-panel.active { display:block;animation:fadeIn .25s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .form-title { font-size:20px;font-weight:700;margin-bottom:6px; }
+  .form-desc  { font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5; }
+  .field { margin-bottom:16px; }
+  label { display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px; }
+  input {
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;
+    outline:none;transition:border-color .2s,box-shadow .2s;
+  }
+  input::placeholder { color:var(--muted);opacity:.6; }
+  input:focus { border-color:rgba(0,209,255,0.5);box-shadow:0 0 0 3px var(--cyan-dim); }
+  input.error { border-color:var(--error); }
+  .btn-primary {
+    width:100%;padding:14px;background:var(--cyan);color:#0D1117;border:none;
+    border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+    letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:6px;
+    transition:opacity .2s,transform .15s;position:relative;overflow:hidden;
+  }
+  .btn-primary:hover  { opacity:.9; }
+  .btn-primary:active { transform:scale(.98); }
+  .btn-primary:disabled { opacity:.4;cursor:not-allowed; }
+  .btn-primary .spinner {
+    width:16px;height:16px;border:2px solid rgba(13,17,23,0.3);border-top-color:#0D1117;
+    border-radius:50%;animation:spin .6s linear infinite;display:inline-block;
+    vertical-align:middle;margin-right:8px;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .toast {
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:12px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;
+    pointer-events:none;white-space:nowrap;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show    { opacity:1;transform:translateX(-50%) translateY(0); }
+  .toast.success { border-color:rgba(0,232,153,0.3);color:var(--success); }
+  .toast.error   { border-color:rgba(255,90,90,0.3);color:var(--error); }
+  .info-box {
+    background:var(--cyan-dim);border:1px solid rgba(0,209,255,0.15);
+    border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;
+    color:var(--cyan);line-height:1.5;margin-bottom:20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">P</div>
+    <div>
+      <div class="logo-text">Performance</div>
+      <div class="logo-sub">Nutrição &amp; Alta Performance</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('login')">Entrar</button>
+    <button class="tab-btn" onclick="switchTab('signup')">Cadastrar</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="form-panel active" id="panel-login">
+    <div class="form-title">Bem-vindo de volta</div>
+    <div class="form-desc">Acesse seu painel de nutricionista ou área do paciente.</div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com"/>
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="••••••••"/>
+    </div>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+  </div>
+
+  <!-- CADASTRO NUTRICIONISTA -->
+  <div class="form-panel" id="panel-signup">
+    <div class="form-title">Criar conta</div>
+    <div class="form-desc">Cadastre-se como nutricionista e gerencie seus pacientes.</div>
+    <div class="info-box">
+      ℹ️ Esta é a conta do <strong>Nutricionista</strong>. Pacientes são criados dentro do painel após o login.
+    </div>
+    <div class="field">
+      <label>Nome completo</label>
+      <input type="text" id="signup-name" placeholder="Dra. Ana Beatriz"/>
+    </div>
+    <div class="field">
+      <label>CRN (opcional)</label>
+      <input type="text" id="signup-crn" placeholder="CRN-3 12345"/>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="signup-email" placeholder="nutri@clinica.com"/>
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres"/>
+    </div>
+    <button class="btn-primary" id="btn-signup" onclick="doSignup()">Criar conta</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyD_HNctj6rWde8LhGZ3diI0Dv836ETSXBE",
+  authDomain:"performance-c506c.firebaseapp.com",
+  projectId:"performance-c506c",
+  storageBucket:"performance-c506c.firebasestorage.app",
+  messagingSenderId:"409852210861",
+  appId:"1:409852210861:web:f4d6cb4330b154a495e024"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// Redirect se já logado
+onAuthStateChanged(auth, async (user) => {
+  if(!user) return;
+  const snap = await getDoc(doc(db,'nutricionistas',user.uid));
+  if(snap.exists()){
+    window.location.href = 'admin.html';
+  } else {
+    window.location.href = `index.html?p=${user.uid}`;
+  }
+});
+
+// ── LOGIN ─────────────────────────────────────────────────
+window.doLogin = async function(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('btn-login');
+  if(!email || !pass){ showToast('Preencha e-mail e senha.','error'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Entrando...';
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    btn.disabled = false;
+    btn.innerHTML = 'Entrar';
+    const msg = {
+      'auth/user-not-found':   'E-mail não encontrado.',
+      'auth/wrong-password':   'Senha incorreta.',
+      'auth/invalid-email':    'E-mail inválido.',
+      'auth/invalid-credential':'E-mail ou senha incorretos.',
+      'auth/too-many-requests':'Muitas tentativas. Tente mais tarde.',
+    }[e.code] || 'Erro ao fazer login.';
+    showToast(msg,'error');
+  }
+};
+
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if(e.key === 'Enter') window.doLogin();
+});
+
+// ── CADASTRO NUTRICIONISTA ────────────────────────────────
+window.doSignup = async function(){
+  const name  = document.getElementById('signup-name').value.trim();
+  const crn   = document.getElementById('signup-crn').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass  = document.getElementById('signup-pass').value;
+  const btn   = document.getElementById('btn-signup');
+  if(!name || !email || !pass){ showToast('Preencha os campos obrigatórios.','error'); return; }
+  if(pass.length < 6){ showToast('Senha mínima: 6 caracteres.','error'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Criando conta...';
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const uid  = cred.user.uid;
+    await setDoc(doc(db,'nutricionistas',uid),{
+      uid, name, crn: crn||null, email,
+      createdAt: serverTimestamp(),
+      plan: 'free',
+      branding:{ clinicName:name, primaryColor:'#00D1FF', logoUrl:null },
+    });
+    showToast('Conta criada! Redirecionando...','success');
+  } catch(e){
+    btn.disabled = false;
+    btn.innerHTML = 'Criar conta';
+    const msg = {
+      'auth/email-already-in-use':'E-mail já cadastrado.',
+      'auth/invalid-email':       'E-mail inválido.',
+      'auth/weak-password':       'Senha muito fraca.',
+    }[e.code] || 'Erro ao criar conta.';
+    showToast(msg,'error');
+  }
+};
+
+// ── UI ────────────────────────────────────────────────────
+window.switchTab = function(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='signup'));
+  });
+  document.getElementById('panel-login').classList.toggle('active',  tab==='login');
+  document.getElementById('panel-signup').classList.toggle('active', tab==='signup');
+};
+
+let toastTimer;
+window.showToast = function(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.className='toast',3200);
+};
+</script>
+</body>
+</html>
