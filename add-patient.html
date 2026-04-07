@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PERFORMANCE — Novo Paciente</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg"/>
+<link rel="apple-touch-icon" href="/icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#1A1C1E; --surface:#22262A; --surface2:#2A2F34;
+    --border:rgba(255,255,255,0.07); --cyan:#00D1FF;
+    --cyan-dim:rgba(0,209,255,0.10); --cyan-glow:rgba(0,209,255,0.25);
+    --text:#F0F4F8; --muted:#7A8A98; --error:#FF5A5A;
+    --success:#00E899; --warn:#FFB830; --radius:10px; --radius-sm:6px;
+  }
+  body {
+    font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+    min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+    padding:32px 16px 60px;position:relative;
+  }
+  body::before {
+    content:'';position:fixed;top:-20%;right:-10%;width:50%;height:50%;
+    background:radial-gradient(ellipse,rgba(0,209,255,0.05) 0%,transparent 65%);pointer-events:none;
+  }
+  .page-header { width:100%;max-width:560px;display:flex;align-items:center;gap:16px;margin-bottom:32px; }
+  .back-btn {
+    width:38px;height:38px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;text-decoration:none;color:var(--muted);font-size:18px;transition:border-color .2s,color .2s;flex-shrink:0;
+  }
+  .back-btn:hover { border-color:var(--cyan);color:var(--cyan); }
+  .page-title-wrap h1 { font-size:18px;font-weight:700;letter-spacing:.5px; }
+  .page-title-wrap p  { font-size:12px;color:var(--muted);margin-top:2px; }
+  .card {
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    width:100%;max-width:560px;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.3);
+    animation:cardIn .35s ease;
+  }
+  @keyframes cardIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .card-section { padding:24px 28px; }
+  .card-section + .card-section { border-top:1px solid var(--border); }
+  .section-label {
+    font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:18px;display:flex;align-items:center;gap:8px;
+  }
+  .section-label::after { content:'';flex:1;height:1px;background:rgba(0,209,255,0.15); }
+  .field-row { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
+  .field-row.single { grid-template-columns:1fr; }
+  .field-row.triple { grid-template-columns:1fr 1fr 1fr; }
+  .field { display:flex;flex-direction:column;gap:6px; }
+  label { font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted); }
+  input, select {
+    background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:11px 13px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;
+    outline:none;transition:border-color .2s,box-shadow .2s;width:100%;-webkit-appearance:none;
+  }
+  input::placeholder { color:var(--muted);opacity:.5; }
+  select { cursor:pointer; }
+  select option { background:var(--surface2); }
+  input:focus, select:focus { border-color:rgba(0,209,255,0.5);box-shadow:0 0 0 3px var(--cyan-dim); }
+  .macro-group { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px; }
+  .macro-field {
+    background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 12px;text-align:center;cursor:default;transition:border-color .2s;
+  }
+  .macro-field:focus-within { border-color:rgba(0,209,255,0.4); }
+  .macro-field .macro-label { font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;display:block; }
+  .macro-field input { background:transparent;border:none;padding:0;text-align:center;font-size:16px;font-weight:700;color:var(--text);box-shadow:none;width:100%; }
+  .macro-field .macro-unit { font-size:9px;color:var(--muted);margin-top:2px; }
+  .cred-box { background:var(--bg);border:1px solid rgba(0,209,255,0.15);border-radius:var(--radius-sm);padding:16px;margin-bottom:14px; }
+  .cred-box-title { font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);margin-bottom:12px; }
+  .cred-gen { display:flex;gap:8px; }
+  .cred-gen input { flex:1;font-family:'Courier New',monospace;font-size:12px; }
+  .btn-gen {
+    background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:0 14px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
+    cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s;
+  }
+  .btn-gen:hover { color:var(--cyan);border-color:rgba(0,209,255,0.3); }
+  .cred-notice { font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5; }
+  .cred-notice strong { color:var(--warn); }
+  .card-footer { padding:20px 28px;border-top:1px solid var(--border);display:flex;gap:12px;align-items:center; }
+  .btn-primary {
+    flex:1;padding:14px;background:var(--cyan);color:#0D1117;border:none;border-radius:var(--radius-sm);
+    font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;
+    text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .15s;
+  }
+  .btn-primary:hover { opacity:.9; }
+  .btn-primary:active { transform:scale(.98); }
+  .btn-primary:disabled { opacity:.4;cursor:not-allowed; }
+  .btn-secondary {
+    padding:14px 20px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);
+    color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;
+    letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-decoration:none;
+    transition:border-color .2s,color .2s;display:flex;align-items:center;
+  }
+  .btn-secondary:hover { border-color:var(--border);color:var(--text); }
+  .spinner {
+    width:14px;height:14px;border:2px solid rgba(13,17,23,.3);border-top-color:#0D1117;
+    border-radius:50%;animation:spin .6s linear infinite;display:inline-block;
+    vertical-align:middle;margin-right:8px;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .success-overlay {
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    padding:48px 28px;text-align:center;gap:12px;
+  }
+  .success-overlay.show { display:flex;animation:fadeIn .3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+  .success-icon { width:64px;height:64px;background:rgba(0,232,153,0.12);border:2px solid rgba(0,232,153,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:8px; }
+  .success-title { font-size:20px;font-weight:700; }
+  .success-desc  { font-size:13px;color:var(--muted);line-height:1.5;max-width:320px; }
+  .success-link { background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-family:'Courier New',monospace;font-size:12px;color:var(--cyan);word-break:break-all;cursor:pointer;transition:border-color .2s;margin-top:8px;width:100%;text-align:center; }
+  .success-link:hover { border-color:rgba(0,209,255,0.4); }
+  .success-actions { display:flex;gap:10px;margin-top:8px;width:100%; }
+  .toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  .toast.success { border-color:rgba(0,232,153,.3);color:var(--success); }
+  .toast.error   { border-color:rgba(255,90,90,.3);color:var(--error); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <a href="admin.html" class="back-btn">←</a>
+  <div class="page-title-wrap">
+    <h1>Novo Paciente</h1>
+    <p>Preencha o perfil e defina as metas iniciais</p>
+  </div>
+</div>
+
+<div class="card" id="main-card">
+
+  <!-- DADOS PESSOAIS -->
+  <div class="card-section">
+    <div class="section-label">Dados pessoais</div>
+    <div class="field-row">
+      <div class="field"><label>Nome completo *</label><input type="text" id="p-name" placeholder="Maria da Silva"/></div>
+      <div class="field"><label>Data de nascimento</label><input type="date" id="p-birth"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>E-mail *</label><input type="email" id="p-email" placeholder="paciente@email.com"/></div>
+      <div class="field"><label>Telefone / WhatsApp</label><input type="tel" id="p-phone" placeholder="(35) 99999-0000"/></div>
+    </div>
+  </div>
+
+  <!-- DADOS FÍSICOS -->
+  <div class="card-section">
+    <div class="section-label">Dados físicos</div>
+    <div class="field-row triple">
+      <div class="field">
+        <label>Sexo</label>
+        <select id="p-sex">
+          <option value="">—</option>
+          <option value="F">Feminino</option>
+          <option value="M">Masculino</option>
+          <option value="O">Outro</option>
+        </select>
+      </div>
+      <div class="field"><label>Peso atual (kg)</label><input type="number" id="p-weight" placeholder="68.5" step="0.1" min="30" max="300"/></div>
+      <div class="field"><label>Altura (cm)</label><input type="number" id="p-height" placeholder="165" min="100" max="250"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Peso meta (kg)</label><input type="number" id="p-weight-goal" placeholder="60.0" step="0.1" min="30" max="300"/></div>
+      <div class="field">
+        <label>Objetivo</label>
+        <select id="p-goal">
+          <option value="">Selecione...</option>
+          <option value="perda_peso">Perda de peso</option>
+          <option value="ganho_massa">Ganho de massa</option>
+          <option value="recomposicao">Recomposição corporal</option>
+          <option value="performance">Alta performance</option>
+          <option value="saude">Saúde geral</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- METAS DIÁRIAS -->
+  <div class="card-section">
+    <div class="section-label">Metas diárias</div>
+    <div class="field-row">
+      <div class="field"><label>Hidratação (ml)</label><input type="number" id="p-water" placeholder="3000" min="500" max="8000" step="100"/></div>
+      <div class="field"><label>Refeições / dia</label><input type="number" id="p-meals" placeholder="5" min="2" max="8"/></div>
+    </div>
+    <div style="margin-bottom:6px;">
+      <label style="display:block;margin-bottom:10px;">Macros diários meta</label>
+      <div class="macro-group">
+        <div class="macro-field">
+          <span class="macro-label">Proteína</span>
+          <input type="number" id="p-prot" placeholder="150" min="0" max="500"/>
+          <div class="macro-unit">gramas</div>
+        </div>
+        <div class="macro-field">
+          <span class="macro-label">Carboidrato</span>
+          <input type="number" id="p-carb" placeholder="200" min="0" max="800"/>
+          <div class="macro-unit">gramas</div>
+        </div>
+        <div class="macro-field">
+          <span class="macro-label">Gordura</span>
+          <input type="number" id="p-fat" placeholder="60" min="0" max="300"/>
+          <div class="macro-unit">gramas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREDENCIAIS -->
+  <div class="card-section">
+    <div class="section-label">Credenciais de acesso</div>
+    <div class="cred-box">
+      <div class="cred-box-title">🔑 Senha do paciente</div>
+      <div class="cred-gen">
+        <input type="text" id="p-pass" placeholder="Gere ou defina uma senha..." readonly/>
+        <button class="btn-gen" onclick="generatePassword()">Gerar</button>
+        <button class="btn-gen" onclick="togglePassEdit()">Editar</button>
+      </div>
+      <div class="cred-notice">
+        O paciente usará o e-mail acima + esta senha para acessar o app.<br/>
+        <strong>⚠️ Anote a senha antes de salvar — ela não ficará visível depois.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="card-footer">
+    <a href="admin.html" class="btn-secondary">Cancelar</a>
+    <button class="btn-primary" id="btn-save" onclick="savePatient()">Salvar Paciente</button>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-overlay" id="success-overlay">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Paciente criado!</div>
+    <div class="success-desc" id="success-desc">Conta criada com sucesso. Compartilhe o link abaixo com o paciente.</div>
+    <div class="success-link" id="success-link" onclick="copyLink()">—</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px;">Clique no link para copiar</div>
+    <div class="success-actions">
+      <button class="btn-secondary" style="flex:1;justify-content:center" onclick="location.href='admin.html'">← Voltar ao painel</button>
+      <button class="btn-primary" style="flex:1" onclick="resetForm()">+ Novo paciente</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyD_HNctj6rWde8LhGZ3diI0Dv836ETSXBE",
+  authDomain:"performance-c506c.firebaseapp.com",
+  projectId:"performance-c506c",
+  storageBucket:"performance-c506c.firebasestorage.app",
+  messagingSenderId:"409852210861",
+  appId:"1:409852210861:web:f4d6cb4330b154a495e024"
+};
+
+// App principal — sessão do nutricionista
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// App secundário — para criar paciente sem derrubar sessão do nutri
+const secondaryApp  = initializeApp(firebaseConfig, 'secondary');
+const secondaryAuth = getAuth(secondaryApp);
+
+let nutriId = null;
+let createdPatientLink = '';
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'auth.html'; return; }
+  nutriId = user.uid;
+});
+
+window.generatePassword = function(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  let pass = '';
+  for(let i=0;i<10;i++) pass += chars[Math.floor(Math.random()*chars.length)];
+  const field = document.getElementById('p-pass');
+  field.value   = pass;
+  field.readOnly = true;
+};
+
+window.togglePassEdit = function(){
+  const field = document.getElementById('p-pass');
+  field.readOnly = !field.readOnly;
+  if(!field.readOnly) field.focus();
+};
+
+window.savePatient = async function(){
+  if(!nutriId){ showToast('Aguarde, verificando sessão...','error'); return; }
+
+  const name  = document.getElementById('p-name').value.trim();
+  const email = document.getElementById('p-email').value.trim();
+  const pass  = document.getElementById('p-pass').value.trim();
+  const btn   = document.getElementById('btn-save');
+
+  if(!name)  { showToast('Nome do paciente é obrigatório.','error'); return; }
+  if(!email) { showToast('E-mail do paciente é obrigatório.','error'); return; }
+  if(!pass || pass.length < 6){ showToast('Gere ou defina uma senha (mín. 6 caracteres).','error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Salvando...';
+
+  try{
+    // FIX: usa app SECUNDÁRIO — sessão do nutricionista não é afetada
+    const cred       = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    const patientUid = cred.user.uid;
+
+    // Desconecta paciente do app secundário imediatamente
+    await signOut(secondaryAuth);
+
+    // FIX: coleção padronizada como 'patients' (não 'pacientes')
+    await setDoc(doc(db,'patients', patientUid),{
+      uid:      patientUid,
+      nutriId,
+      name,
+      email,
+      phone:     document.getElementById('p-phone').value.trim()  || null,
+      birthDate: document.getElementById('p-birth').value         || null,
+      sex:       document.getElementById('p-sex').value           || null,
+      createdAt: serverTimestamp(),
+      status:    'active',
+      physical:{
+        weightKg:  parseFloat(document.getElementById('p-weight').value)      || null,
+        heightCm:  parseFloat(document.getElementById('p-height').value)      || null,
+        goal:      document.getElementById('p-goal').value                    || null,
+      },
+      goals:{
+        waterMl:      parseInt(document.getElementById('p-water').value)  || 3000,
+        mealsPerDay:  parseInt(document.getElementById('p-meals').value)  || 5,
+        weightKg:     parseFloat(document.getElementById('p-weight').value)    || null,
+        weightGoalKg: parseFloat(document.getElementById('p-weight-goal').value) || null,
+        macros:{
+          proteinG: parseInt(document.getElementById('p-prot').value) || 0,
+          carbsG:   parseInt(document.getElementById('p-carb').value) || 0,
+          fatG:     parseInt(document.getElementById('p-fat').value)  || 0,
+        }
+      },
+      meals:  [],
+      supps:  [],
+      streak: 0,
+      lastActiveDate: null,
+      weightHistory:  [],
+      // Espaço reservado para financeiro (Fase 5)
+      billing:{
+        plan:        null,
+        monthlyFee:  null,
+        dueDay:      null,
+        status:      null,
+        lastPayment: null,
+      },
+    });
+
+    const appUrl = `${location.origin}/index.html?p=${patientUid}`;
+    createdPatientLink = appUrl;
+    document.getElementById('success-link').textContent = appUrl;
+    document.getElementById('success-desc').textContent =
+      `${name}. Compartilhe o link abaixo — o paciente faz login com o e-mail e a senha definidos.`;
+
+    document.getElementById('main-card').querySelectorAll('.card-section,.card-footer')
+      .forEach(el => el.style.display='none');
+    document.getElementById('success-overlay').classList.add('show');
+
+  } catch(e){
+    btn.disabled = false;
+    btn.innerHTML = 'Salvar Paciente';
+    const msg = {
+      'auth/email-already-in-use': 'Este e-mail já está em uso.',
+      'auth/invalid-email':        'E-mail inválido.',
+      'auth/weak-password':        'Senha muito fraca.',
+    }[e.code] || `Erro: ${e.message}`;
+    showToast(msg,'error');
+  }
+};
+
+window.copyLink = function(){
+  navigator.clipboard.writeText(createdPatientLink)
+    .then(()=>showToast('Link copiado!','success'))
+    .catch(()=>showToast('Copie manualmente.','error'));
+};
+
+window.resetForm = function(){
+  document.querySelectorAll('input,select').forEach(el=>el.value='');
+  document.getElementById('main-card').querySelectorAll('.card-section,.card-footer')
+    .forEach(el=>el.style.display='');
+  document.getElementById('success-overlay').classList.remove('show');
+  document.getElementById('btn-save').disabled = false;
+  document.getElementById('btn-save').innerHTML = 'Salvar Paciente';
+};
+
+let toastTimer;
+window.showToast = function(msg,type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.className='toast',3200);
+};
+</script>
+</body>
+</html>

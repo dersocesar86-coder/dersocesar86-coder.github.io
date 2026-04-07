@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PERFORMANCE · Admin</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg"/>
+<link rel="apple-touch-icon" href="/icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#1A1C1E; --surface:#22262A; --surface2:#2A2F34;
+  --border:rgba(255,255,255,.07); --cyan:#00D1FF;
+  --cdim:rgba(0,209,255,.10); --text:#F0F4F8; --muted:#7A8A98;
+  --green:#00E899; --red:#FF5A5A; --warn:#FFB830;
+  --r:10px; --rs:6px;
+}
+
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;}
+
+/* ── LOGIN ── */
+#login-screen{
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;
+  position:relative;
+}
+#login-screen::before{
+  content:'';position:fixed;top:-30%;left:-20%;width:60%;height:60%;
+  background:radial-gradient(ellipse,rgba(0,209,255,.06) 0%,transparent 65%);pointer-events:none;
+}
+.login-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:40px;width:100%;max-width:380px;
+  box-shadow:0 32px 64px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.03);
+  animation:cardIn .4s ease;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.login-p{font-size:40px;font-weight:900;color:var(--cyan);letter-spacing:-2px;margin-bottom:4px;}
+.login-title{font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;margin-top:3px;}
+.login-input{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
+  padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;
+  outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:10px;display:block;
+}
+.login-input:focus{border-color:rgba(0,209,255,.5);box-shadow:0 0 0 3px var(--cdim);}
+.login-input::placeholder{color:var(--muted);opacity:.5;}
+.btn-login{
+  width:100%;padding:14px;background:var(--cyan);color:#0D1117;border:none;border-radius:var(--rs);
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;cursor:pointer;transition:opacity .2s;
+}
+.btn-login:hover{opacity:.9;}
+.login-err{font-size:12px;color:var(--red);text-align:center;margin-top:10px;display:none;animation:fadeIn .2s;}
+.login-err.show{display:block;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ── ADMIN APP ── */
+#admin-app{display:none;flex-direction:column;min-height:100dvh;}
+
+.adm-hdr{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.adm-hdr-left{display:flex;align-items:center;gap:12px;}
+.adm-role{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.adm-title{font-size:15px;font-weight:800;letter-spacing:1px;}
+.btn-logout{
+  background:transparent;border:1px solid var(--border);border-radius:var(--rs);
+  padding:7px 14px;color:var(--muted);font-family:'Outfit',sans-serif;
+  font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s;
+}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+.adm-body{display:grid;grid-template-columns:260px 1fr;flex:1;min-height:0;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:16px;overflow-y:auto;}
+.sidebar-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding:0 4px;}
+.btn-new-patient{
+  width:100%;padding:11px;background:var(--cyan);color:#0D1117;border:none;
+  border-radius:var(--rs);font-family:'Outfit',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+  margin-bottom:14px;transition:opacity .2s;
+}
+.btn-new-patient:hover{opacity:.9;}
+.patient-list{display:flex;flex-direction:column;gap:4px;}
+.patient-item{padding:11px 12px;border-radius:var(--rs);cursor:pointer;border:1px solid transparent;transition:all .2s;}
+.patient-item:hover{background:var(--surface2);}
+.patient-item.active{background:var(--cdim);border-color:rgba(0,209,255,.2);}
+.patient-item-name{font-size:13px;font-weight:600;}
+.patient-item-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.patient-status{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;}
+
+/* ── MAIN ── */
+.main-content{padding:24px;overflow-y:auto;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:12px;text-align:center;}
+.empty-icon{font-size:48px;opacity:.3;}
+.empty-title{font-size:16px;font-weight:700;color:var(--muted);}
+.empty-sub{font-size:13px;color:var(--muted);max-width:280px;line-height:1.5;}
+
+/* ── PATIENT DETAIL ── */
+.patient-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.patient-hdr-name{font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.patient-hdr-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.patient-actions{display:flex;gap:8px;}
+.btn-action{
+  padding:9px 16px;border-radius:var(--rs);font-family:'Outfit',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;
+}
+.btn-action:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-action.primary{background:var(--cyan);color:#0D1117;border-color:var(--cyan);}
+.btn-action.danger{background:transparent;color:var(--red);}
+.btn-action.danger:hover{border-color:var(--red);}
+
+.sections-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
+.card.full{grid-column:span 2;}
+.card-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;
+}
+.stat-big{font-size:28px;font-weight:800;color:var(--cyan);letter-spacing:-1px;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px;}
+
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+label.field-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+input.field-input,select.field-input{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
+  padding:10px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s,box-shadow .2s;width:100%;
+}
+input.field-input:focus,select.field-input:focus{border-color:rgba(0,209,255,.5);box-shadow:0 0 0 3px var(--cdim);}
+input.field-input::placeholder{color:var(--muted);opacity:.5;}
+select.field-input option{background:var(--surface2);}
+
+.link-box{
+  background:var(--bg);border:1px solid rgba(0,209,255,.2);border-radius:var(--rs);
+  padding:10px 12px;font-size:12px;color:var(--cyan);word-break:break-all;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.btn-copy{
+  background:var(--cdim);border:none;border-radius:4px;padding:4px 10px;
+  color:var(--cyan);font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;
+  cursor:pointer;white-space:nowrap;letter-spacing:1px;text-transform:uppercase;
+}
+
+/* ── MEAL ROW — nova estrutura com macros ── */
+.meals-editor{display:flex;flex-direction:column;gap:10px;}
+.meal-row{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
+  padding:12px;display:flex;flex-direction:column;gap:8px;
+}
+.meal-row-top{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;}
+.meal-row-desc{display:grid;grid-template-columns:1fr;gap:8px;}
+.meal-row-macros{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  background:rgba(0,209,255,.04);border:1px solid rgba(0,209,255,.08);
+  border-radius:var(--rs);padding:8px;
+}
+.macro-field-wrap{display:flex;flex-direction:column;gap:3px;}
+.macro-field-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-align:center;}
+.meal-row input{font-size:12px;padding:7px 10px;}
+.btn-rm{
+  width:28px;height:28px;background:transparent;border:1px solid var(--border);
+  border-radius:var(--rs);color:var(--muted);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;
+}
+.btn-rm:hover{border-color:var(--red);color:var(--red);}
+.btn-add-row{
+  background:transparent;border:1px dashed var(--border);border-radius:var(--rs);
+  padding:9px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;
+  cursor:pointer;transition:all .2s;width:100%;
+}
+.btn-add-row:hover{border-color:var(--cyan);color:var(--cyan);}
+
+.supp-row{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
+  padding:10px;display:grid;grid-template-columns:40px 1fr 80px auto;gap:8px;align-items:center;
+}
+.supp-row input{font-size:12px;padding:7px 10px;}
+
+.prog-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;}
+.prog-label span:first-child{color:var(--muted);}
+.prog-label span:last-child{font-weight:600;}
+.prog-bar{background:var(--surface2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:10px;}
+.prog-fill{height:100%;border-radius:20px;}
+
+.msg{padding:.5rem .875rem;border-radius:.5rem;font-size:.8125rem;font-weight:600;margin-top:.75rem;display:none;}
+.msg.ok{background:rgba(0,232,153,.1);border:1px solid rgba(0,232,153,.2);color:var(--green);display:block;}
+.msg.err{background:rgba(255,90,90,.1);border:1px solid rgba(255,90,90,.2);color:var(--red);display:block;}
+
+/* NEW PATIENT FORM */
+.form-hdr{font-size:18px;font-weight:700;margin-bottom:6px;}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.form-section{margin-bottom:20px;}
+.form-section-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(0,209,255,.1);
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row.single{grid-template-columns:1fr;}
+.btn-save{
+  padding:13px 28px;background:var(--cyan);color:#0D1117;border:none;border-radius:var(--rs);
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;cursor:pointer;transition:opacity .2s;
+}
+.btn-save:hover{opacity:.9;}
+.btn-save:disabled{opacity:.4;cursor:not-allowed;}
+.spinner{
+  width:14px;height:14px;border:2px solid rgba(13,17,23,.3);border-top-color:#0D1117;
+  border-radius:50%;animation:spin .6s linear infinite;display:inline-block;
+  vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.pass-gen{display:flex;gap:8px;}
+.pass-gen input{flex:1;}
+.btn-gen{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);
+  padding:0 12px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;
+  font-weight:600;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s;
+}
+.btn-gen:hover{color:var(--cyan);border-color:rgba(0,209,255,.3);}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 18px;font-size:12px;font-weight:500;opacity:0;transition:all .3s;
+  pointer-events:none;z-index:200;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:rgba(0,232,153,.3);color:var(--green);}
+.toast.err{border-color:rgba(255,90,90,.3);color:var(--red);}
+
+@media(max-width:768px){
+  .adm-body{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .sections-grid{grid-template-columns:1fr;}
+  .sections-grid .card.full{grid-column:span 1;}
+  .meal-row-top{grid-template-columns:1fr 80px auto;}
+  .supp-row{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-p">P</div>
+    <div class="login-title">Performance · Admin</div>
+    <div class="login-sub">Painel do Nutricionista</div>
+    <input class="login-input" id="email-input" type="email" placeholder="seu@email.com"/>
+    <input class="login-input" id="pass-input" type="password" placeholder="Senha"/>
+    <button class="btn-login" onclick="doLogin()">Entrar →</button>
+    <div class="login-err" id="login-err">E-mail ou senha incorretos</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app">
+  <div class="adm-hdr">
+    <div class="adm-hdr-left">
+      <div style="font-size:1.5rem;font-weight:900;color:var(--cyan);letter-spacing:-.05em;">P</div>
+      <div>
+        <div class="adm-role">Painel Admin</div>
+        <div class="adm-title">PERFORMANCE</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Sair</button>
+  </div>
+
+  <div class="adm-body">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-title">Pacientes</div>
+      <button class="btn-new-patient" onclick="showNewPatientForm()">+ Novo Paciente</button>
+      <div class="patient-list" id="patient-list">
+        <div style="font-size:.8125rem;color:var(--muted);text-align:center;padding:1rem;">Carregando...</div>
+      </div>
+    </div>
+
+    <div class="main-content" id="main-content">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">👤</div>
+        <div class="empty-title">Selecione um paciente</div>
+        <div class="empty-sub">Escolha um paciente na lista à esquerda ou crie um novo para começar.</div>
+      </div>
+      <div id="patient-detail" style="display:none;"></div>
+      <div id="new-patient-form" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, getDocs, deleteDoc,
+         collection, query, where, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey:"AIzaSyD_HNctj6rWde8LhGZ3diI0Dv836ETSXBE",
+  authDomain:"performance-c506c.firebaseapp.com",
+  projectId:"performance-c506c",
+  storageBucket:"performance-c506c.firebasestorage.app",
+  messagingSenderId:"409852210861",
+  appId:"1:409852210861:web:f4d6cb4330b154a495e024"
+};
+
+// App principal — sessão do nutricionista
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// ── FIX SESSION SWAP: app secundário para criar pacientes ──
+// Usar um app Firebase separado garante que a sessão do nutricionista
+// no app principal nunca seja afetada ao criar uma conta de paciente.
+const secondaryApp  = initializeApp(firebaseConfig, 'secondary');
+const secondaryAuth = getAuth(secondaryApp);
+
+let patients    = [];
+let selectedPid = null;
+let nutriId     = null;
+
+// ── AUTH ──────────────────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  if(user){
+    nutriId = user.uid;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display    = 'flex';
+    loadPatients();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-app').style.display    = 'none';
+  }
+});
+
+window.doLogin = async function(){
+  const email = document.getElementById('email-input').value.trim();
+  const pass  = document.getElementById('pass-input').value;
+  const err   = document.getElementById('login-err');
+  if(!email||!pass){ err.classList.add('show'); return; }
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    err.textContent = ['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(e.code)
+      ? 'E-mail ou senha incorretos' : 'Erro ao entrar. Tente novamente.';
+    err.classList.add('show');
+    setTimeout(()=>err.classList.remove('show'),3000);
+  }
+};
+
+document.getElementById('pass-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter') window.doLogin();
+});
+
+window.doLogout = async function(){
+  await signOut(auth);
+};
+
+// ── LOAD PATIENTS ─────────────────────────────────────────
+// FIX: removido o fallback sem filtro — segurança entre nutricionistas
+async function loadPatients(){
+  try{
+    const q    = query(collection(db,'patients'), where('nutriId','==',nutriId));
+    const snap = await getDocs(q);
+    patients = [];
+    snap.forEach(d => patients.push({id:d.id,...d.data()}));
+    renderPatientList();
+  } catch(e){
+    console.error('Erro ao carregar pacientes:', e);
+    const list = document.getElementById('patient-list');
+    list.innerHTML = '<div style="font-size:.8125rem;color:var(--red);text-align:center;padding:1rem;">Erro ao carregar pacientes.</div>';
+  }
+}
+
+function renderPatientList(){
+  const list = document.getElementById('patient-list');
+  if(!patients.length){
+    list.innerHTML='<div style="font-size:.8125rem;color:var(--muted);text-align:center;padding:1rem;">Nenhum paciente ainda</div>';
+    return;
+  }
+  list.innerHTML = patients.map(p=>`
+    <div class="patient-item${selectedPid===p.id?' active':''}" onclick="selectPatient('${p.id}')">
+      <div class="patient-item-name">
+        <span class="patient-status"></span>${p.name||p.id}
+      </div>
+      <div class="patient-item-meta">
+        ${p.physical?.goal ? goalLabel(p.physical.goal) : ''}
+        ${p.physical?.weightKg ? ' · '+p.physical.weightKg+'kg' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function goalLabel(g){
+  return {perda_peso:'Perda de peso',ganho_massa:'Ganho de massa',
+          recomposicao:'Recomposição',performance:'Performance',saude:'Saúde'}[g]||g;
+}
+
+// ── SELECT PATIENT ────────────────────────────────────────
+window.selectPatient = async function(pid){
+  selectedPid = pid;
+  renderPatientList();
+  const p = patients.find(x=>x.id===pid);
+  if(!p) return;
+
+  document.getElementById('empty-state').style.display     = 'none';
+  document.getElementById('new-patient-form').style.display = 'none';
+  const detail = document.getElementById('patient-detail');
+  detail.style.display = 'block';
+
+  const appUrl   = `${location.origin}/index.html?p=${pid}`;
+  const todayStr = new Date().toISOString().slice(0,10);
+  let logData = null;
+  try{
+    const ls = await getDoc(doc(db,'logs',`${pid}_${todayStr}`));
+    if(ls.exists()) logData = ls.data();
+  }catch{}
+
+  const water     = logData?.waterMl||0;
+  const waterGoal = p.goals?.waterMl||3000;
+  const mealsDone = (logData?.meals||[]).filter(m=>m.done).length;
+  const mealsTotal= (p.meals||[]).length;
+
+  detail.innerHTML = `
+    <div class="patient-hdr">
+      <div>
+        <div class="patient-hdr-name">${p.name||pid}</div>
+        <div class="patient-hdr-meta">${p.email||''} ${p.physical?.weightKg?'· '+p.physical.weightKg+'kg':''}</div>
+      </div>
+      <div class="patient-actions">
+        <button class="btn-action" onclick="copyLink('${appUrl}')">Copiar link</button>
+        <button class="btn-action primary" onclick="window.open('${appUrl}','_blank')">Ver app</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:8px;">Link do paciente</div>
+      <div class="link-box">
+        <span>${appUrl}</span>
+        <button class="btn-copy" onclick="copyLink('${appUrl}')">Copiar</button>
+      </div>
+    </div>
+
+    <div class="sections-grid" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-title">Água hoje</div>
+        <div class="stat-big">${water}<span style="font-size:14px;color:var(--muted)">ml</span></div>
+        <div class="stat-label">Meta: ${waterGoal}ml</div>
+        <div class="prog-bar" style="margin-top:8px;">
+          <div class="prog-fill" style="width:${Math.min(100,Math.round(water/waterGoal*100))}%;background:var(--cyan);"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Refeições hoje</div>
+        <div class="stat-big">${mealsDone}<span style="font-size:14px;color:var(--muted)">/${mealsTotal}</span></div>
+        <div class="stat-label">${mealsDone>=mealsTotal&&mealsTotal>0?'✅ Completo':'Em andamento'}</div>
+      </div>
+    </div>
+
+    <!-- METAS DIÁRIAS -->
+    <div class="card full" style="margin-bottom:16px;">
+      <div class="card-title">Metas diárias <button class="btn-action" style="font-size:10px;padding:4px 10px;" onclick="saveMetas('${pid}')">Salvar</button></div>
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label">Hidratação (ml)</label>
+          <input class="field-input" id="g-water" type="number" value="${p.goals?.waterMl||3000}" min="500" max="8000"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Refeições / dia</label>
+          <input class="field-input" id="g-meals" type="number" value="${p.goals?.mealsPerDay||5}" min="1" max="10"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label">Proteína meta (g)</label>
+          <input class="field-input" id="g-prot" type="number" value="${p.goals?.macros?.proteinG||0}"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Carboidrato meta (g)</label>
+          <input class="field-input" id="g-carb" type="number" value="${p.goals?.macros?.carbsG||0}"/>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="field">
+          <label class="field-label">Gordura meta (g)</label>
+          <input class="field-input" id="g-fat" type="number" value="${p.goals?.macros?.fatG||0}" style="max-width:200px;"/>
+        </div>
+      </div>
+      <div class="msg" id="msg-meta"></div>
+    </div>
+
+    <!-- REFEIÇÕES — com campos de macros por refeição -->
+    <div class="card full" style="margin-bottom:16px;">
+      <div class="card-title">
+        Refeições configuradas
+        <button class="btn-action" style="font-size:10px;padding:4px 10px;" onclick="saveMeals('${pid}')">Salvar</button>
+      </div>
+      <div class="meals-editor" id="meals-editor">
+        ${(p.meals||[]).map((m,i) => mealRowHTML(m,i)).join('')}
+      </div>
+      <button class="btn-add-row" onclick="addMealRow()">+ Adicionar refeição</button>
+      <div class="msg" id="msg-meals"></div>
+    </div>
+
+    <!-- SUPLEMENTOS -->
+    <div class="card full" style="margin-bottom:16px;">
+      <div class="card-title">
+        Suplementos
+        <button class="btn-action" style="font-size:10px;padding:4px 10px;" onclick="saveSupps('${pid}')">Salvar</button>
+      </div>
+      <div class="meals-editor" id="supps-editor">
+        ${(p.supps||[]).map((s,i)=>`
+          <div class="supp-row" id="srow-${i}">
+            <input class="field-input" placeholder="💊" value="${s.icon||'💊'}" oninput="suppField(${i},'icon',this.value)" style="text-align:center;"/>
+            <input class="field-input" placeholder="Nome" value="${s.name||''}" oninput="suppField(${i},'name',this.value)"/>
+            <input class="field-input" placeholder="Horário" value="${s.time||''}" oninput="suppField(${i},'time',this.value)"/>
+            <button class="btn-rm" onclick="removeSupp(${i})">×</button>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn-add-row" onclick="addSuppRow()">+ Adicionar suplemento</button>
+      <div class="msg" id="msg-supps"></div>
+    </div>
+  `;
+
+  window._editMeals = JSON.parse(JSON.stringify(p.meals||[]));
+  window._editSupps = JSON.parse(JSON.stringify(p.supps||[]));
+};
+
+// ── MEAL ROW HTML — inclui campos P/C/G por refeição ──
+function mealRowHTML(m, i){
+  return `
+    <div class="meal-row" id="mrow-${i}">
+      <div class="meal-row-top">
+        <input class="field-input" placeholder="Nome (ex: Café da manhã)" value="${m.name||''}" oninput="mealField(${i},'name',this.value)"/>
+        <input class="field-input" placeholder="08:00" value="${m.time||''}" oninput="mealField(${i},'time',this.value)"/>
+        <button class="btn-rm" onclick="removeMeal(${i})">×</button>
+      </div>
+      <div class="meal-row-desc">
+        <input class="field-input" placeholder="Descrição / alimentos" value="${m.desc||''}" oninput="mealField(${i},'desc',this.value)"/>
+      </div>
+      <div class="meal-row-macros">
+        <div class="macro-field-wrap">
+          <div class="macro-field-label">Proteína (g)</div>
+          <input class="field-input" type="number" placeholder="0" min="0" value="${m.proteinG||0}" oninput="mealField(${i},'proteinG',parseFloat(this.value)||0)" style="text-align:center;padding:6px 8px;"/>
+        </div>
+        <div class="macro-field-wrap">
+          <div class="macro-field-label">Carboidrato (g)</div>
+          <input class="field-input" type="number" placeholder="0" min="0" value="${m.carbsG||0}" oninput="mealField(${i},'carbsG',parseFloat(this.value)||0)" style="text-align:center;padding:6px 8px;"/>
+        </div>
+        <div class="macro-field-wrap">
+          <div class="macro-field-label">Gordura (g)</div>
+          <input class="field-input" type="number" placeholder="0" min="0" value="${m.fatG||0}" oninput="mealField(${i},'fatG',parseFloat(this.value)||0)" style="text-align:center;padding:6px 8px;"/>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── EDIT MEALS / SUPPS ────────────────────────────────────
+window.mealField = (i,k,v) => { if(window._editMeals[i]) window._editMeals[i][k]=v; };
+window.suppField = (i,k,v) => { if(window._editSupps[i]) window._editSupps[i][k]=v; };
+
+window.addMealRow = function(){
+  const i = window._editMeals.length;
+  window._editMeals.push({name:'',time:'',desc:'',proteinG:0,carbsG:0,fatG:0});
+  const row = document.createElement('div');
+  row.id = `mrow-${i}`;
+  row.innerHTML = mealRowHTML({name:'',time:'',desc:'',proteinG:0,carbsG:0,fatG:0}, i);
+  row.className = '';
+  // mealRowHTML já gera a div.meal-row interna, então inserimos o conteúdo diretamente
+  document.getElementById('meals-editor').insertAdjacentHTML('beforeend', mealRowHTML({name:'',time:'',desc:'',proteinG:0,carbsG:0,fatG:0}, i));
+};
+
+window.removeMeal = function(i){
+  window._editMeals.splice(i,1);
+  document.getElementById(`mrow-${i}`)?.remove();
+};
+
+window.addSuppRow = function(){
+  const i = window._editSupps.length;
+  window._editSupps.push({icon:'💊',name:'',time:''});
+  document.getElementById('supps-editor').insertAdjacentHTML('beforeend',`
+    <div class="supp-row" id="srow-${i}">
+      <input class="field-input" value="💊" style="text-align:center;" oninput="suppField(${i},'icon',this.value)"/>
+      <input class="field-input" placeholder="Nome" oninput="suppField(${i},'name',this.value)"/>
+      <input class="field-input" placeholder="Horário" oninput="suppField(${i},'time',this.value)"/>
+      <button class="btn-rm" onclick="removeSupp(${i})">×</button>
+    </div>
+  `);
+};
+
+window.removeSupp = function(i){
+  window._editSupps.splice(i,1);
+  document.getElementById(`srow-${i}`)?.remove();
+};
+
+// ── SAVE ─────────────────────────────────────────────────
+window.saveMetas = async function(pid){
+  try{
+    await updateDoc(doc(db,'patients',pid),{goals:{
+      waterMl:     parseInt(document.getElementById('g-water').value)||3000,
+      mealsPerDay: parseInt(document.getElementById('g-meals').value)||5,
+      macros:{
+        proteinG: parseInt(document.getElementById('g-prot').value)||0,
+        carbsG:   parseInt(document.getElementById('g-carb').value)||0,
+        fatG:     parseInt(document.getElementById('g-fat').value)||0,
+      }
+    }});
+    showMsg('msg-meta','ok','✅ Metas salvas!');
+    const p = patients.find(x=>x.id===pid);
+    if(p) p.goals = {waterMl: parseInt(document.getElementById('g-water').value)||3000};
+  } catch(e){ showMsg('msg-meta','err','❌ Erro: '+e.message); }
+};
+
+window.saveMeals = async function(pid){
+  try{
+    await updateDoc(doc(db,'patients',pid),{meals:window._editMeals});
+    showMsg('msg-meals','ok','✅ Refeições salvas!');
+    const p = patients.find(x=>x.id===pid);
+    if(p) p.meals = window._editMeals;
+  } catch(e){ showMsg('msg-meals','err','❌ Erro: '+e.message); }
+};
+
+window.saveSupps = async function(pid){
+  try{
+    await updateDoc(doc(db,'patients',pid),{supps:window._editSupps});
+    showMsg('msg-supps','ok','✅ Suplementos salvos!');
+    const p = patients.find(x=>x.id===pid);
+    if(p) p.supps = window._editSupps;
+  } catch(e){ showMsg('msg-supps','err','❌ Erro: '+e.message); }
+};
+
+// ── NEW PATIENT FORM ──────────────────────────────────────
+window.showNewPatientForm = function(){
+  selectedPid = null;
+  renderPatientList();
+  document.getElementById('empty-state').style.display     = 'none';
+  document.getElementById('patient-detail').style.display  = 'none';
+  const f = document.getElementById('new-patient-form');
+  f.style.display = 'block';
+  f.innerHTML = `
+    <div class="form-hdr">Novo Paciente</div>
+    <div class="form-sub">Preencha os dados para criar o perfil e a conta de acesso do paciente.</div>
+
+    <div class="form-section">
+      <div class="form-section-title">Dados pessoais</div>
+      <div class="form-row">
+        <div class="field"><label class="field-label">Nome *</label><input class="field-input" id="n-name" placeholder="Maria da Silva"/></div>
+        <div class="field"><label class="field-label">E-mail *</label><input class="field-input" id="n-email" type="email" placeholder="maria@email.com"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label class="field-label">Peso (kg)</label><input class="field-input" id="n-weight" type="number" placeholder="68.5" step=".1"/></div>
+        <div class="field"><label class="field-label">Altura (cm)</label><input class="field-input" id="n-height" type="number" placeholder="165"/></div>
+      </div>
+      <div class="form-row single">
+        <div class="field">
+          <label class="field-label">Objetivo</label>
+          <select class="field-input" id="n-goal">
+            <option value="">Selecione...</option>
+            <option value="perda_peso">Perda de peso</option>
+            <option value="ganho_massa">Ganho de massa</option>
+            <option value="recomposicao">Recomposição corporal</option>
+            <option value="performance">Alta performance</option>
+            <option value="saude">Saúde geral</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Metas iniciais</div>
+      <div class="form-row">
+        <div class="field"><label class="field-label">Hidratação (ml)</label><input class="field-input" id="n-water" type="number" value="3000"/></div>
+        <div class="field"><label class="field-label">Refeições/dia</label><input class="field-input" id="n-meals" type="number" value="5"/></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Peso meta</div>
+      <div class="form-row">
+        <div class="field"><label class="field-label">Peso atual (kg)</label><input class="field-input" id="n-weight-cur" type="number" placeholder="68.5" step=".1"/></div>
+        <div class="field"><label class="field-label">Peso meta (kg)</label><input class="field-input" id="n-weight-goal" type="number" placeholder="60.0" step=".1"/></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Senha de acesso</div>
+      <div class="field">
+        <label class="field-label">Senha do paciente *</label>
+        <div class="pass-gen">
+          <input class="field-input" id="n-pass" placeholder="Gere ou defina uma senha..." readonly/>
+          <button class="btn-gen" onclick="genPass()">Gerar</button>
+          <button class="btn-gen" onclick="document.getElementById('n-pass').readOnly=false;document.getElementById('n-pass').focus();">Editar</button>
+        </div>
+        <div style="font-size:11px;color:var(--warn);margin-top:6px;">⚠️ Anote a senha — ela não ficará visível depois.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn-save" id="btn-save-patient" onclick="createPatient()">Criar Paciente</button>
+      <button class="btn-action" onclick="cancelNew()">Cancelar</button>
+    </div>
+    <div class="msg" id="msg-new"></div>
+  `;
+};
+
+window.genPass = function(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  let p=''; for(let i=0;i<10;i++) p+=c[Math.floor(Math.random()*c.length)];
+  document.getElementById('n-pass').value=p;
+  document.getElementById('n-pass').readOnly=true;
+};
+
+window.cancelNew = function(){
+  document.getElementById('new-patient-form').style.display='none';
+  document.getElementById('empty-state').style.display='flex';
+};
+
+// ── CREATE PATIENT — FIX session swap via app secundário ──
+window.createPatient = async function(){
+  const name       = document.getElementById('n-name').value.trim();
+  const email      = document.getElementById('n-email').value.trim();
+  const pass       = document.getElementById('n-pass').value.trim();
+  const btn        = document.getElementById('btn-save-patient');
+  const weightCur  = parseFloat(document.getElementById('n-weight-cur').value)||null;
+  const weightGoal = parseFloat(document.getElementById('n-weight-goal').value)||null;
+
+  if(!name||!email||!pass||pass.length<6){
+    showMsg('msg-new','err','Preencha nome, e-mail e gere uma senha (mín. 6 caracteres).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Criando...';
+
+  try{
+    // Usa o app SECUNDÁRIO — sessão do nutricionista no app principal fica intacta
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    const pid  = cred.user.uid;
+
+    // Desconecta o paciente do app secundário imediatamente
+    await signOut(secondaryAuth);
+
+    // Salva perfil na coleção correta: patients
+    await setDoc(doc(db,'patients',pid),{
+      uid:        pid,
+      nutriId,
+      name,
+      email,
+      createdAt:  serverTimestamp(),
+      status:     'active',
+      physical:{
+        weightKg:  parseFloat(document.getElementById('n-weight').value||weightCur)||null,
+        heightCm:  parseFloat(document.getElementById('n-height').value)||null,
+        goal:      document.getElementById('n-goal').value||null,
+      },
+      goals:{
+        waterMl:     parseInt(document.getElementById('n-water').value)||3000,
+        mealsPerDay: parseInt(document.getElementById('n-meals').value)||5,
+        macros:{ proteinG:0, carbsG:0, fatG:0 },
+        weightKg:    weightCur,
+        weightGoalKg:weightGoal,
+      },
+      meals:  [],
+      supps:  [],
+      streak: 0,
+      lastActiveDate: null,
+      // Espaço reservado para financeiro (Fase 5)
+      billing: {
+        plan:       null,
+        monthlyFee: null,
+        dueDay:     null,
+        status:     null, // 'active' | 'overdue' | 'cancelled'
+        lastPayment:null,
+      },
+    });
+
+    patients.push({id:pid, name, email, nutriId, physical:{}, goals:{waterMl:3000}});
+    renderPatientList();
+    showMsg('msg-new','ok',`✅ Paciente criado! Link: ${location.origin}/index.html?p=${pid}`);
+    btn.disabled = false;
+    btn.textContent = 'Criar Paciente';
+
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = 'Criar Paciente';
+    const msg = {
+      'auth/email-already-in-use': 'E-mail já cadastrado.',
+      'auth/invalid-email':        'E-mail inválido.',
+      'auth/weak-password':        'Senha muito fraca.',
+    }[e.code] || 'Erro: '+e.message;
+    showMsg('msg-new','err',msg);
+  }
+};
+
+// ── UTILS ─────────────────────────────────────────────────
+window.copyLink = function(url){
+  navigator.clipboard.writeText(url)
+    .then(()=>showToast('Link copiado!','ok'))
+    .catch(()=>showToast('Copie manualmente.','err'));
+};
+
+function showMsg(id,type,msg){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className   = 'msg '+(type==='ok'?'ok':'err');
+  setTimeout(()=>{ if(el) el.className='msg'; },4000);
+}
+
+let toastTimer;
+window.showToast = function(msg,type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.className='toast',3000);
+};
+</script>
+</body>
+</html>
