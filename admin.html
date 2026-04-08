@@ -395,7 +395,7 @@ window.saveClinicProfile=async function(){
   const logo=document.getElementById('clinic-logo-input').value.trim();
   if(!name){showToast('Informe o nome da clínica.','err');return;}
   try{
-    await updateDoc(doc(db,'nutricionistas',nutriId),{'branding.clinicName':name,'branding.logoUrl':logo||null});
+   await setDoc(doc(db,'nutricionistas',nutriId),{branding:{clinicName:name,logoUrl:logo||null}},{merge:true});
     if(!nutriData) nutriData={};
     if(!nutriData.branding) nutriData.branding={};
     nutriData.branding.clinicName=name; nutriData.branding.logoUrl=logo||null;
