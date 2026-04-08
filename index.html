@@ -441,8 +441,33 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const cfg={
-  apiKey:"AIzaSyD_HNctj6rWde8LhGZ3diI0Dv836ETSXBE",
+if(logSnap.exists()){
+  todayLog=logSnap.data();
+  // Sincroniza refeições e suplementos se o nutricionista adicionou depois
+  const profileMeals=profile.meals||[];
+  const logMeals=todayLog.meals||[];
+  if(profileMeals.length!==logMeals.length){
+    const merged=profileMeals.map(m=>{
+      const existing=logMeals.find(lm=>lm.name===m.name&&lm.time===m.time);
+      return existing?{...m,...existing,done:existing.done}:{...m,done:false};
+    });
+    todayLog.meals=merged;
+    await setDoc(logRef,{...todayLog,updatedAt:serverTimestamp()});
+  }
+  const profileSupps=profile.supps||[];
+  const logSupps=todayLog.supps||[];
+  if(profileSupps.length!==logSupps.length){
+    const mergedS=profileSupps.map(s=>{
+      const existing=logSupps.find(ls=>ls.name===s.name);
+      return existing?{...s,...existing,done:existing.done}:{...s,done:false};
+    });
+    todayLog.supps=mergedS;
+    await setDoc(logRef,{...todayLog,updatedAt:serverTimestamp()});
+  }
+} else {
+  todayLog=buildEmptyLog(pid);
+  await setDoc(logRef,{...todayLog,createdAt:serverTimestamp()});
+}  apiKey:"AIzaSyD_HNctj6rWde8LhGZ3diI0Dv836ETSXBE",
   authDomain:"performance-c506c.firebaseapp.com",
   projectId:"performance-c506c",
   storageBucket:"performance-c506c.firebasestorage.app",
